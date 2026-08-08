@@ -1,6 +1,17 @@
 "use client";
 
 import { useHome } from "@/app/hooks/use-home";
+import { useState } from "react";
+// Importe ou defina o tipo MenuItem conforme o seu projeto
+type MenuItem = {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  image_url?: string | null;
+  category_id?: string;
+  is_available: boolean;
+};
 
 export default function HomePage() {
   const {
@@ -12,6 +23,9 @@ export default function HomePage() {
     error,
     setActiveCategory,
   } = useHome();
+
+  // Estado para controlar o modal de detalhes do prato
+  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
   return (
     <main className="min-h-screen bg-stone-50 px-4 py-6 text-slate-900 sm:px-6 lg:px-8 pb-16">
@@ -37,7 +51,7 @@ export default function HomePage() {
                   <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl border border-stone-200 bg-stone-100 shadow-sm sm:h-16 sm:w-16">
                     <img
                       src={settings.logo_url}
-                      alt={settings.name}
+                      alt={settings?.name || "Rancho Mineiro"}
                       className="h-full w-full object-cover"
                     />
                   </div>
@@ -47,7 +61,7 @@ export default function HomePage() {
                     Cardápio Digital
                   </p>
                   <h1 className="mt-1 text-2xl font-extrabold text-slate-900 sm:text-3xl">
-                    {settings?.name ?? "Seu restaurante"}
+                    {settings?.name || "Rancho Mineiro"}
                   </h1>
                 </div>
               </div>
@@ -67,21 +81,6 @@ export default function HomePage() {
             <p className="mt-3 text-sm leading-relaxed text-slate-600">
               {settings?.description || "Uma experiência limpa, responsiva e pensada para mostrar os pratos do dia sem distrações."}
             </p>
-
-            {/* Botão de WhatsApp (caso cadastrado) */}
-            {settings?.whatsapp && (
-              <div className="mt-4 pt-4 border-t border-stone-100 flex items-center justify-between">
-                <span className="text-xs text-slate-500">Dúvidas ou pedidos?</span>
-                <a
-                  href={`https://wa.me/55${settings.whatsapp.replace(/\D/g, '')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700"
-                >
-                  <span>💬</span> Chamar no WhatsApp
-                </a>
-              </div>
-            )}
           </div>
         </header>
 
@@ -145,9 +144,10 @@ export default function HomePage() {
                 filteredItems.map((item) => (
                   <article
                     key={item.id}
-                    className="flex items-center gap-4 rounded-3xl border border-stone-200 bg-white p-4 shadow-sm transition active:scale-[0.99] sm:p-5"
+                    onClick={() => setSelectedItem(item as MenuItem)}
+                    className="flex items-center gap-4 rounded-3xl border border-stone-200 bg-white p-4 shadow-sm transition hover:border-slate-300 active:scale-[0.99] cursor-pointer sm:p-5"
                   >
-                    {/* Imagem do Prato com suporte a image_url */}
+                    {/* Imagem do Prato */}
                     <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-stone-100 border border-stone-200 overflow-hidden text-2xl">
                       {item.image_url ? (
                         <img
@@ -160,14 +160,14 @@ export default function HomePage() {
                       )}
                     </div>
 
-                    {/* Informações do Prato */}
+                    {/* Informações do Prato com mais descrição visível */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <h2 className="text-base font-bold text-slate-900 truncate">
                             {item.name}
                           </h2>
-                          <p className="mt-1 text-xs leading-relaxed text-slate-600 line-clamp-2">
+                          <p className="mt-1 text-xs leading-relaxed text-slate-600 line-clamp-3">
                             {item.description || "Sem descrição informada."}
                           </p>
                         </div>
@@ -183,6 +183,73 @@ export default function HomePage() {
           </>
         )}
       </div>
+
+      {/* Modal de Detalhes do Prato */}
+      {selectedItem && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs p-0 sm:p-4">
+          <div className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+            {/* Imagem Grande no Modal (se houver) */}
+            {selectedItem.image_url ? (
+              <div className="h-56 w-full bg-stone-100 relative">
+                <img
+                  src={selectedItem.image_url}
+                  alt={selectedItem.name}
+                  className="h-full w-full object-cover"
+                />
+                <button
+                  onClick={() => setSelectedItem(null)}
+                  className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 h-9 w-9 flex items-center justify-center backdrop-blur-sm transition"
+                >
+                  ✕
+                </button>
+              </div>
+            ) : (
+              <div className="p-4 flex justify-end">
+                <button
+                  onClick={() => setSelectedItem(null)}
+                  className="bg-stone-100 hover:bg-stone-200 text-slate-700 rounded-full h-9 w-9 flex items-center justify-center transition"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
+            {/* Conteúdo Detalhado */}
+            <div className="p-6 overflow-y-auto space-y-4">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-600">
+                  Detalhes do Prato
+                </span>
+                <h2 className="text-2xl font-black text-slate-900 mt-1">
+                  {selectedItem.name}
+                </h2>
+                <span className="inline-block mt-2 text-lg font-extrabold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-xl">
+                  R$ {Number(selectedItem.price).toFixed(2).replace('.', ',')}
+                </span>
+              </div>
+
+              <div className="border-t border-stone-100 pt-4">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                  Descrição Completa
+                </h3>
+                <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-wrap">
+                  {selectedItem.description || "Nenhuma descrição detalhada informada para este prato."}
+                </p>
+              </div>
+            </div>
+
+            {/* Rodapé do Modal */}
+            <div className="p-4 bg-stone-50 border-t border-stone-100 flex items-center justify-end">
+              <button
+                onClick={() => setSelectedItem(null)}
+                className="w-full sm:w-auto bg-slate-900 text-white font-bold text-xs uppercase tracking-wider px-6 py-3 rounded-2xl shadow-sm hover:bg-slate-800 transition"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
