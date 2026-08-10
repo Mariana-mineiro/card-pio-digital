@@ -1,5 +1,7 @@
+import { QueryProvider } from "@/components/ui/providers/query-provider";
 import "@/styles/globals.css";
 import type { Metadata } from "next";
+
 
 export const metadata: Metadata = {
   title: "Rancho mineiro",
@@ -13,9 +15,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR dark">
+    <html lang="pt-BR">
       <body className="min-h-screen bg-stone-50 text-slate-900 antialiased">
-        {children}
+        <QueryProvider>
+          {children}
+        </QueryProvider>
       </body>
     </html>
   );

@@ -1,51 +1,34 @@
 "use client";
 
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getHomeCategories,
   getHomeMenuItems,
   getHomeSettings,
 } from "@/app/services/home-service";
-import type { Category, MenuItem, Settings } from "@/app/types/home-types";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 export function useHome() {
-  const [settings, setSettings] = useState<Settings | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const queryClient = useQueryClient();
   const [activeCategory, setActiveCategory] = useState<string>("all");
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const loadHomeData = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  const { data: settings, isLoading: isLoadingSettings } = useQuery({
+    queryKey: ["home-settings"],
+    queryFn: getHomeSettings,
+  });
 
-    try {
-      const [settingsData, categoriesData, itemsData] = await Promise.all([
-        getHomeSettings(),
-        getHomeCategories(),
-        getHomeMenuItems(),
-      ]);
+  const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
+    queryKey: ["home-categories"],
+    queryFn: getHomeCategories,
+  });
 
-      setSettings(settingsData);
-      setCategories(categoriesData);
-      setMenuItems(itemsData);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Falha ao carregar o cardápio.",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const { data: menuItems = [], isLoading: isLoadingMenuItems, error: queryError } = useQuery({
+    queryKey: ["home-menu-items"],
+    queryFn: getHomeMenuItems,
+  });
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      void loadHomeData();
-    }, 0);
-
-    return () => clearTimeout(timer);
-  }, [loadHomeData]);
+  const isLoading = isLoadingSettings || isLoadingCategories || isLoadingMenuItems;
+  const error = queryError?.message || null;
 
   const filteredItems = useMemo(() => {
     if (activeCategory === "all") return menuItems;
@@ -61,6 +44,10 @@ export function useHome() {
     setActiveCategory,
     isLoading,
     error,
-    reload: loadHomeData,
+    reload: () => {
+      queryClient.invalidateQueries({ queryKey: ["home-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["home-categories"] });
+      queryClient.invalidateQueries({ queryKey: ["home-menu-items"] });
+    },
   };
 }

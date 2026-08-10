@@ -9,8 +9,8 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import { useState } from "react";
 import Image from "next/image";
+import { useState } from "react";
 
 import { useHome } from "@/app/hooks/use-home";
 import { Button } from "@/components/ui/button";
@@ -36,15 +36,12 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-[oklch(0.985_0.002_85)] text-slate-900 pb-16">
-      
-      {/* Faixa Superior com a Cor de Fundo Aconchegante (Estilo Referência) */}
+      {/* Faixa Superior com a Cor de Fundo Aconchegante */}
       <div className="w-full bg-[oklch(0.91_0.03_85)] h-44 sm:h-52 relative" />
 
       <div className="mx-auto flex max-w-4xl flex-col gap-6 px-4 sm:px-6 lg:px-8 -mt-24 sm:-mt-28 relative z-10">
-        
-        {/* Cabeçalho Estilo Lovable com Logo Sobreposta */}
+        {/* Cabeçalho com Logo Sobreposta */}
         <header className="relative rounded-3xl border border-stone-200/80 bg-white px-6 pb-6 pt-16 text-center shadow-lg sm:px-8 sm:pb-8 sm:pt-20">
-          {/* Logo Circular Sobreposta */}
           <div className="absolute -top-12 left-1/2 -translate-x-1/2 h-24 w-24 sm:h-28 sm:w-28 rounded-full overflow-hidden border-4 border-white bg-white shadow-md flex items-center justify-center">
             <Image
               src="/logo-rancho-mineiro.png"
@@ -56,14 +53,12 @@ export default function HomePage() {
             />
           </div>
 
-          {/* Informações do Estabelecimento */}
           <div className="flex flex-col items-center gap-3">
             <div className="flex flex-wrap items-center justify-center gap-2">
               <h1 className="text-2xl sm:text-3xl font-black text-stone-900 tracking-tight">
                 Rancho Mineiro
               </h1>
-              
-              {/* Status Aberto / Fechado */}
+
               <span
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold shadow-xs ${
                   settings?.is_open
@@ -73,7 +68,9 @@ export default function HomePage() {
               >
                 <span
                   className={`h-2 w-2 rounded-full ${
-                    settings?.is_open ? "bg-emerald-200 animate-pulse" : "bg-amber-200"
+                    settings?.is_open
+                      ? "bg-emerald-200 animate-pulse"
+                      : "bg-amber-200"
                   }`}
                 />
                 {settings?.is_open ? "Aberto" : "Fechado"}
@@ -81,7 +78,8 @@ export default function HomePage() {
             </div>
 
             <p className="max-w-md text-sm sm:text-base leading-relaxed text-stone-600 font-medium">
-              Restaurante e Pesque e Pague • Pratos do dia preparados com ingredientes frescos e muito carinho!
+              Restaurante e Pesque e Pague • Pratos do dia preparados com
+              ingredientes frescos e muito carinho!
             </p>
           </div>
         </header>
@@ -131,7 +129,7 @@ export default function HomePage() {
           </section>
         ) : (
           <>
-            {/* Navegação por Categorias (Abas) */}
+            {/* Navegação por Categorias */}
             <nav className="flex gap-2 overflow-x-auto rounded-2xl bg-white p-2 shadow-sm border border-stone-200 no-scrollbar sticky top-4 z-20">
               <button
                 onClick={() => setActiveCategory("all")}
@@ -171,7 +169,6 @@ export default function HomePage() {
                     onClick={() => setSelectedItem(item as MenuItem)}
                     className="flex items-center gap-4 rounded-3xl border border-stone-200 bg-white p-4 shadow-sm transition hover:border-stone-300 active:scale-[0.99] cursor-pointer sm:p-5"
                   >
-                    {/* Imagem do Prato */}
                     <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-stone-100 border border-stone-200 overflow-hidden text-2xl">
                       {item.image_url ? (
                         <Image
@@ -186,7 +183,6 @@ export default function HomePage() {
                       )}
                     </div>
 
-                    {/* Informações do Prato */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
@@ -214,8 +210,6 @@ export default function HomePage() {
       <Drawer
         open={!!selectedItem}
         onOpenChange={(open) => !open && setSelectedItem(null)}
-        showSwipeHandle={isMobile}
-        swipeDirection={isMobile ? "down" : "right"}
       >
         <DrawerContent>
           {selectedItem && (
@@ -243,7 +237,8 @@ export default function HomePage() {
                   </DrawerTitle>
                   <div className="pt-1">
                     <span className="inline-block text-lg font-black text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-xl">
-                      R$ {Number(selectedItem.price).toFixed(2).replace(".", ",")}
+                      R${" "}
+                      {Number(selectedItem.price).toFixed(2).replace(".", ",")}
                     </span>
                   </div>
                 </div>
@@ -267,11 +262,14 @@ export default function HomePage() {
               <DrawerFooter>
                 <DrawerClose
                   render={
-                    <Button variant="outline" className="w-full rounded-2xl font-bold text-stone-800 border-stone-300">
+                    <Button
+                      variant="outline"
+                      className="w-full rounded-2xl font-bold text-stone-800 border-stone-300"
+                    >
                       Fechar
                     </Button>
                   }
-                />
+                ></DrawerClose>
               </DrawerFooter>
             </>
           )}

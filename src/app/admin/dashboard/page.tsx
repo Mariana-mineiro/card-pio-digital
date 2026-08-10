@@ -7,6 +7,8 @@ import { ConfirmModal } from "@/app/admin/dashboard/components/confirm-modal";
 import { useDashboard } from "@/app/admin/dashboard/hooks/use-dashboard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -45,9 +47,9 @@ export default function AdminDashboardPage() {
         <header className="rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 shadow-xs">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.24em] text-emerald-700">
+              <Label className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.24em] text-emerald-700">
                 Painel administrativo
-              </p>
+              </Label>
               <h1 className="mt-1 text-2xl sm:text-3xl font-black text-slate-900">
                 Gerencie o seu cardápio
               </h1>

@@ -1,3 +1,7 @@
+"use client";
+
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import {
   createDashboardCategory,
   createDashboardMenuItem,
@@ -17,21 +21,33 @@ import type {
   ProductFormData,
   Settings,
 } from "../types/dashboard-types";
-import { useCallback, useEffect, useState } from "react";
 
 export function useDashboard() {
-  const [settings, setSettings] = useState<Settings | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
+  // Queries do React Query
+  const { data: settings, isLoading: isLoadingSettings } = useQuery({
+    queryKey: ["dashboard-settings"],
+    queryFn: getDashboardSettings,
+  });
+
+  const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
+    queryKey: ["dashboard-categories"],
+    queryFn: getDashboardCategories,
+  });
+
+  const { data: menuItems = [], isLoading: isLoadingMenuItems, error: queryError } = useQuery({
+    queryKey: ["dashboard-menu-items"],
+    queryFn: getDashboardMenuItems,
+  });
+
+  const isLoading = isLoadingSettings || isLoadingCategories || isLoadingMenuItems;
+  const error = queryError?.message || null;
 
   // Estados dos Modais
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
-  
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
 
   // Estado do Modal de Confirmação Genérico
@@ -47,73 +63,22 @@ export function useDashboard() {
     onConfirm: () => {},
   });
 
-  const loadDashboardData = useCallback(async function fetchDashboard(retries = 3) {
-    setIsLoading(true);
-    setError(null);
+  // Mutations
+  const updateSettingsMutation = useMutation({
+    mutationFn: updateDashboardSettings,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["dashboard-settings"] }),
+  });
 
-    try {
-      const [settingsData, categoriesData, itemsData] = await Promise.all([
-        getDashboardSettings(),
-        getDashboardCategories(),
-        getDashboardMenuItems(),
-      ]);
-
-      setSettings(settingsData);
-      setCategories(categoriesData);
-      setMenuItems(itemsData);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "";
-      if (message.includes("JWT issued at future") && retries > 0) {
-        setTimeout(() => {
-          void fetchDashboard(retries - 1);
-        }, 1000);
-        return;
-      }
-      setError(message || "Falha ao carregar o dashboard.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      void loadDashboardData();
-    }, 0);
-
-    return () => clearTimeout(timer);
-  }, [loadDashboardData]);
-
-  const toggleRestaurantStatus = async () => {
-    if (!settings) return;
-    try {
-      const updated = await updateDashboardSettings({
-        ...settings,
-        is_open: !settings.is_open,
-      });
-      setSettings(updated);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleCreateCategory = async (name: string) => {
-    setIsSubmitting(true);
-    setModalError(null);
-    try {
-      const created = await createDashboardCategory(name.trim());
-      setCategories((current) => [...current, created]);
+  const createCategoryMutation = useMutation({
+    mutationFn: createDashboardCategory,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dashboard-categories"] });
       setIsCategoryModalOpen(false);
-    } catch (err) {
-      setModalError(err instanceof Error ? err.message : "Erro ao criar categoria.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    },
+  });
 
-  const handleSaveMenuItem = async (data: ProductFormData, id?: string) => {
-    setIsSubmitting(true);
-    setModalError(null);
-    try {
+  const saveProductMutation = useMutation({
+    mutationFn: async ({ data, id }: { data: ProductFormData; id?: string }) => {
       let imageUrl = editingItem?.image_url || null;
       if (data.image && data.image.length > 0) {
         imageUrl = await uploadProductImage(data.image[0]);
@@ -134,21 +99,72 @@ export function useDashboard() {
       };
 
       if (id) {
-        const updated = await updateDashboardMenuItem(id, payload);
-        setMenuItems((current) =>
-          current.map((item) => (item.id === id ? updated : item)),
-        );
+        return await updateDashboardMenuItem(id, payload);
       } else {
-        const created = await createDashboardMenuItem(payload);
-        setMenuItems((current) => [created, ...current]);
+        return await createDashboardMenuItem(payload);
       }
-
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dashboard-menu-items"] });
       setIsProductModalOpen(false);
       setEditingItem(null);
+    },
+  });
+
+  const deleteProductMutation = useMutation({
+    mutationFn: deleteDashboardMenuItem,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dashboard-menu-items"] });
+      setConfirmConfig((prev) => ({ ...prev, isOpen: false }));
+    },
+  });
+
+  const deleteCategoryMutation = useMutation({
+    mutationFn: deleteDashboardCategory,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dashboard-categories"] });
+      setConfirmConfig((prev) => ({ ...prev, isOpen: false }));
+    },
+  });
+
+  const toggleAvailabilityMutation = useMutation({
+    mutationFn: async ({ id, is_available }: { id: string; is_available: boolean }) => {
+      return await updateDashboardMenuItem(id, { is_available });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dashboard-menu-items"] });
+      setConfirmConfig((prev) => ({ ...prev, isOpen: false }));
+    },
+  });
+
+  // Handlers para ações da tela
+  const toggleRestaurantStatus = async () => {
+    if (!settings) return;
+    try {
+      await updateSettingsMutation.mutateAsync({
+        ...settings,
+        is_open: !settings.is_open,
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleCreateCategory = async (name: string) => {
+    setModalError(null);
+    try {
+      await createCategoryMutation.mutateAsync(name.trim());
+    } catch (err) {
+      setModalError(err instanceof Error ? err.message : "Erro ao criar categoria.");
+    }
+  };
+
+  const handleSaveMenuItem = async (data: ProductFormData, id?: string) => {
+    setModalError(null);
+    try {
+      await saveProductMutation.mutateAsync({ data, id });
     } catch (err) {
       setModalError(err instanceof Error ? err.message : "Erro ao salvar prato.");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -171,18 +187,10 @@ export function useDashboard() {
       title: item.is_available ? "Ocultar Prato" : "Tornar Disponível",
       description: `Deseja realmente ${item.is_available ? "ocultar" : "exibir"} o prato "${item.name}" no cardápio?`,
       onConfirm: async () => {
-        setIsSubmitting(true);
-        try {
-          const updated = await updateDashboardMenuItem(id, {
-            is_available: !item.is_available,
-          });
-          setMenuItems((current) =>
-            current.map((entry) => (entry.id === id ? updated : entry)),
-          );
-          setConfirmConfig((prev) => ({ ...prev, isOpen: false }));
-        } finally {
-          setIsSubmitting(false);
-        }
+        await toggleAvailabilityMutation.mutateAsync({
+          id,
+          is_available: !item.is_available,
+        });
       },
     });
   };
@@ -194,14 +202,7 @@ export function useDashboard() {
       title: "Excluir Prato",
       description: `Tem certeza que deseja excluir permanentemente o prato "${item?.name ?? ""}"?`,
       onConfirm: async () => {
-        setIsSubmitting(true);
-        try {
-          await deleteDashboardMenuItem(id);
-          setMenuItems((current) => current.filter((item) => item.id !== id));
-          setConfirmConfig((prev) => ({ ...prev, isOpen: false }));
-        } finally {
-          setIsSubmitting(false);
-        }
+        await deleteProductMutation.mutateAsync(id);
       },
     });
   };
@@ -213,14 +214,7 @@ export function useDashboard() {
       title: "Excluir Categoria",
       description: `Tem certeza que deseja excluir a categoria "${category?.name ?? ""}"?`,
       onConfirm: async () => {
-        setIsSubmitting(true);
-        try {
-          await deleteDashboardCategory(id);
-          setCategories((current) => current.filter((cat) => cat.id !== id));
-          setConfirmConfig((prev) => ({ ...prev, isOpen: false }));
-        } finally {
-          setIsSubmitting(false);
-        }
+        await deleteCategoryMutation.mutateAsync(id);
       },
     });
   };
@@ -236,7 +230,13 @@ export function useDashboard() {
     isCategoryModalOpen,
     setIsCategoryModalOpen,
     editingItem,
-    isSubmitting,
+    isSubmitting:
+      updateSettingsMutation.isPending ||
+      createCategoryMutation.isPending ||
+      saveProductMutation.isPending ||
+      deleteProductMutation.isPending ||
+      deleteCategoryMutation.isPending ||
+      toggleAvailabilityMutation.isPending,
     modalError,
     confirmConfig,
     setConfirmConfig,
@@ -248,6 +248,10 @@ export function useDashboard() {
     toggleAvailability,
     requestDeleteMenuItem,
     requestDeleteCategory,
-    reload: loadDashboardData,
+    reload: () => {
+      queryClient.invalidateQueries({ queryKey: ["dashboard-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-categories"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-menu-items"] });
+    },
   };
 }
