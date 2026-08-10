@@ -1,29 +1,23 @@
-"use client";
-
 import {
   createDashboardCategory,
   createDashboardMenuItem,
+  deleteDashboardCategory,
   deleteDashboardMenuItem,
   getDashboardCategories,
   getDashboardMenuItems,
   getDashboardSettings,
+  updateDashboardCategory,
   updateDashboardMenuItem,
   updateDashboardSettings,
+  uploadProductImage,
 } from "@/app/admin/dashboard/services/dashboard-service";
 import type {
   Category,
   MenuItem,
+  ProductFormData,
   Settings,
-} from "@/app/admin/dashboard/types/dashboard-types";
-import { useCallback, useEffect, useMemo, useState } from "react";
-
-type ProductDraft = {
-  name: string;
-  description: string;
-  price: string;
-  category_id: string;
-  is_available: boolean;
-};
+} from "../types/dashboard-types";
+import { useCallback, useEffect, useState } from "react";
 
 export function useDashboard() {
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -31,17 +25,29 @@ export function useDashboard() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [draftCategory, setDraftCategory] = useState("");
-  const [draftItem, setDraftItem] = useState<ProductDraft>({
-    name: "",
-    description: "",
-    price: "",
-    category_id: "",
-    is_available: true,
-  });
-  const [editingItemId, setEditingItemId] = useState<string | null>(null);
 
-  const loadDashboardData = useCallback(async () => {
+  // Estados dos Modais
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
+
+  // Estado do Modal de Confirmação Genérico
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => Promise<void> | void;
+  }>({
+    isOpen: false,
+    title: "",
+    description: "",
+    onConfirm: () => {},
+  });
+
+  const loadDashboardData = useCallback(async function fetchDashboard(retries = 3) {
     setIsLoading(true);
     setError(null);
 
@@ -56,118 +62,168 @@ export function useDashboard() {
       setCategories(categoriesData);
       setMenuItems(itemsData);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Falha ao carregar o dashboard.",
-      );
+      const message = err instanceof Error ? err.message : "";
+      if (message.includes("JWT issued at future") && retries > 0) {
+        setTimeout(() => {
+          void fetchDashboard(retries - 1);
+        }, 1000);
+        return;
+      }
+      setError(message || "Falha ao carregar o dashboard.");
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
+    const timer = setTimeout(() => {
       void loadDashboardData();
     }, 0);
 
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
+    return () => clearTimeout(timer);
   }, [loadDashboardData]);
 
   const toggleRestaurantStatus = async () => {
     if (!settings) return;
-    const updated = await updateDashboardSettings({
-      ...settings,
-      is_open: !settings.is_open,
-    });
-    setSettings(updated);
-  };
-
-  const addCategory = async () => {
-    if (!draftCategory.trim()) return;
-    const created = await createDashboardCategory(draftCategory.trim());
-    setCategories((current) => [...current, created]);
-    setDraftCategory("");
-  };
-
-  const addOrUpdateMenuItem = async () => {
-    if (!draftItem.name.trim()) return;
-
-    const payload = {
-      name: draftItem.name.trim(),
-      description: draftItem.description.trim(),
-      price: Number(draftItem.price || 0),
-      category_id: draftItem.category_id || undefined,
-      is_available: draftItem.is_available,
-    };
-
-    if (editingItemId) {
-      const updated = await updateDashboardMenuItem(editingItemId, payload);
-      setMenuItems((current) =>
-        current.map((item) => (item.id === editingItemId ? updated : item)),
-      );
-      setEditingItemId(null);
-    } else {
-      const created = await createDashboardMenuItem(payload);
-      setMenuItems((current) => [created, ...current]);
+    try {
+      const updated = await updateDashboardSettings({
+        ...settings,
+        is_open: !settings.is_open,
+      });
+      setSettings(updated);
+    } catch (err) {
+      console.error(err);
     }
-
-    setDraftItem({
-      name: "",
-      description: "",
-      price: "",
-      category_id: "",
-      is_available: true,
-    });
   };
 
-  const startEditingItem = (item: MenuItem) => {
-    setEditingItemId(item.id);
-    setDraftItem({
-      name: item.name,
-      description: item.description ?? "",
-      price: String(item.price),
-      category_id: item.category_id ?? "",
-      is_available: item.is_available,
-    });
+  const handleCreateCategory = async (name: string) => {
+    setIsSubmitting(true);
+    setModalError(null);
+    try {
+      const created = await createDashboardCategory(name.trim());
+      setCategories((current) => [...current, created]);
+      setIsCategoryModalOpen(false);
+    } catch (err) {
+      setModalError(err instanceof Error ? err.message : "Erro ao criar categoria.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const cancelEditingItem = () => {
-    setEditingItemId(null);
-    setDraftItem({
-      name: "",
-      description: "",
-      price: "",
-      category_id: "",
-      is_available: true,
-    });
+  const handleSaveMenuItem = async (data: ProductFormData, id?: string) => {
+    setIsSubmitting(true);
+    setModalError(null);
+    try {
+      let imageUrl = editingItem?.image_url || null;
+      if (data.image && data.image.length > 0) {
+        imageUrl = await uploadProductImage(data.image[0]);
+      }
+
+      const priceString = typeof data.price === "string" ? data.price : String(data.price ?? "");
+      const rawPrice = Number(priceString.replace(/\./g, "").replace(",", "."));
+
+      const payload = {
+        name: data.name.trim(),
+        description: data.description?.trim() || "",
+        price: isNaN(rawPrice) ? 0 : rawPrice,
+        position: 0,
+        category_id: data.category_id || null,
+        is_available: data.is_available,
+        is_active: true,
+        image_url: imageUrl,
+      };
+
+      if (id) {
+        const updated = await updateDashboardMenuItem(id, payload);
+        setMenuItems((current) =>
+          current.map((item) => (item.id === id ? updated : item)),
+        );
+      } else {
+        const created = await createDashboardMenuItem(payload);
+        setMenuItems((current) => [created, ...current]);
+      }
+
+      setIsProductModalOpen(false);
+      setEditingItem(null);
+    } catch (err) {
+      setModalError(err instanceof Error ? err.message : "Erro ao salvar prato.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const toggleAvailability = async (id: string) => {
+  const openCreateProductModal = () => {
+    setEditingItem(null);
+    setIsProductModalOpen(true);
+  };
+
+  const openEditProductModal = (item: MenuItem) => {
+    setEditingItem(item);
+    setIsProductModalOpen(true);
+  };
+
+  const toggleAvailability = (id: string) => {
     const item = menuItems.find((entry) => entry.id === id);
     if (!item) return;
-    const updated = await updateDashboardMenuItem(id, {
-      is_available: !item.is_available,
+
+    setConfirmConfig({
+      isOpen: true,
+      title: item.is_available ? "Ocultar Prato" : "Tornar Disponível",
+      description: `Deseja realmente ${item.is_available ? "ocultar" : "exibir"} o prato "${item.name}" no cardápio?`,
+      onConfirm: async () => {
+        setIsSubmitting(true);
+        try {
+          const updated = await updateDashboardMenuItem(id, {
+            is_available: !item.is_available,
+          });
+          setMenuItems((current) =>
+            current.map((entry) => (entry.id === id ? updated : entry)),
+          );
+          setConfirmConfig((prev) => ({ ...prev, isOpen: false }));
+        } finally {
+          setIsSubmitting(false);
+        }
+      },
     });
-    setMenuItems((current) =>
-      current.map((entry) => (entry.id === id ? updated : entry)),
-    );
   };
 
-  const deleteMenuItem = async (id: string) => {
-    await deleteDashboardMenuItem(id);
-    setMenuItems((current) => current.filter((item) => item.id !== id));
+  const requestDeleteMenuItem = (id: string) => {
+    const item = menuItems.find((entry) => entry.id === id);
+    setConfirmConfig({
+      isOpen: true,
+      title: "Excluir Prato",
+      description: `Tem certeza que deseja excluir permanentemente o prato "${item?.name ?? ""}"?`,
+      onConfirm: async () => {
+        setIsSubmitting(true);
+        try {
+          await deleteDashboardMenuItem(id);
+          setMenuItems((current) => current.filter((item) => item.id !== id));
+          setConfirmConfig((prev) => ({ ...prev, isOpen: false }));
+        } finally {
+          setIsSubmitting(false);
+        }
+      },
+    });
   };
 
-  const summary = useMemo(
-    () => ({
-      totalItems: menuItems.length,
-      availableItems: menuItems.filter((item) => item.is_available).length,
-      unavailableItems: menuItems.filter((item) => !item.is_available).length,
-      categoriesCount: categories.length,
-    }),
-    [categories.length, menuItems],
-  );
+  const requestDeleteCategory = (id: string) => {
+    const category = categories.find((entry) => entry.id === id);
+    setConfirmConfig({
+      isOpen: true,
+      title: "Excluir Categoria",
+      description: `Tem certeza que deseja excluir a categoria "${category?.name ?? ""}"?`,
+      onConfirm: async () => {
+        setIsSubmitting(true);
+        try {
+          await deleteDashboardCategory(id);
+          setCategories((current) => current.filter((cat) => cat.id !== id));
+          setConfirmConfig((prev) => ({ ...prev, isOpen: false }));
+        } finally {
+          setIsSubmitting(false);
+        }
+      },
+    });
+  };
 
   return {
     settings,
@@ -175,19 +231,23 @@ export function useDashboard() {
     menuItems,
     isLoading,
     error,
-    draftCategory,
-    draftItem,
-    editingItemId,
-    setDraftCategory,
-    setDraftItem,
+    isProductModalOpen,
+    setIsProductModalOpen,
+    isCategoryModalOpen,
+    setIsCategoryModalOpen,
+    editingItem,
+    isSubmitting,
+    modalError,
+    confirmConfig,
+    setConfirmConfig,
     toggleRestaurantStatus,
-    addCategory,
-    addOrUpdateMenuItem,
-    startEditingItem,
-    cancelEditingItem,
+    handleCreateCategory,
+    handleSaveMenuItem,
+    openCreateProductModal,
+    openEditProductModal,
     toggleAvailability,
-    deleteMenuItem,
-    summary,
+    requestDeleteMenuItem,
+    requestDeleteCategory,
     reload: loadDashboardData,
   };
 }

@@ -1,22 +1,14 @@
-export interface Settings {
-  id: string;
-  restaurant_name: string;
-  is_open: boolean;
-  created_at?: string;
-}
+import { Database } from "@/types/supabase";
 
-export interface Category {
-  id: string;
-  name: string;
-  created_at?: string;
-}
+export type Settings = Database["public"]["Tables"]["settings"]["Row"];
+export type Category = Database["public"]["Tables"]["categories"]["Row"];
+export type MenuItem = Database["public"]["Tables"]["menu_items"]["Row"];
 
-export interface MenuItem {
-  id: string;
+export type ProductFormData = {
   name: string;
-  description?: string;
+  description: string;
   price: number;
-  category_id?: string;
+  category_id: string;
   is_available: boolean;
-  created_at?: string;
-}
+  image?: FileList;
+};

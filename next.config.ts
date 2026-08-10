@@ -1,8 +1,17 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  /* config options here */
-  reactStrictMode: true,
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co', // Autoriza qualquer projeto do Supabase (para as fotos dos pratos)
+      },
+    ],
+  },
 };
 
-export default nextConfig;
+module.exports = nextConfig;

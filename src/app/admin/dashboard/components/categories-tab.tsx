@@ -1,63 +1,50 @@
-type Category = {
-  id: string;
-  name: string;
-};
+"use client";
 
-type CategoriesTabProps = {
+import type { Category } from "../types/dashboard-types";
+import { Button } from "@/components/ui/button";
+
+type Props = {
   categories: Category[];
-  draftCategory: string;
-  onDraftChange: (value: string) => void;
-  onCreateCategory: () => void;
+  onDeleteCategory: (id: string) => void;
 };
 
-export function CategoriesTab({
-  categories,
-  draftCategory,
-  onDraftChange,
-  onCreateCategory,
-}: CategoriesTabProps) {
+export function CategoriesTab({ categories, onDeleteCategory }: Props) {
   return (
-    <section className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl">
-      <div className="flex items-center justify-between gap-3">
+    <section className="rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 shadow-xs">
+      <div className="flex items-center justify-between pb-4 sm:pb-6 border-b border-slate-100">
         <div>
-          <h2 className="text-xl font-semibold">Categorias</h2>
-          <p className="mt-1 text-sm text-slate-400">
-            Organize o cardápio por seções.
-          </p>
+          <h2 className="text-lg sm:text-xl font-bold text-slate-900">Categorias Cadastradas</h2>
+          <p className="text-xs sm:text-sm text-slate-500">Organize os grupos do seu cardápio.</p>
         </div>
       </div>
 
-      <div className="mt-5 flex gap-2">
-        <input
-          value={draftCategory}
-          onChange={(event) => onDraftChange(event.target.value)}
-          className="flex-1 rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none"
-          placeholder="Nova categoria"
-        />
-        <button
-          onClick={() => void onCreateCategory()}
-          className="rounded-2xl bg-emerald-500 px-4 py-2 text-sm font-medium text-slate-950"
-        >
-          Criar
-        </button>
-      </div>
-
-      <div className="mt-5 space-y-2">
-        {categories.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-700 p-4 text-sm text-slate-400">
-            Nenhuma categoria cadastrada.
-          </div>
-        ) : (
-          categories.map((category) => (
+      {categories.length === 0 ? (
+        <div className="py-12 text-center text-xs sm:text-sm text-slate-500">
+          Nenhuma categoria cadastrada ainda. Clique em &quot;+ Nova Categoria&quot; acima.
+        </div>
+      ) : (
+        <div className="divide-y divide-slate-100 mt-2">
+          {categories.map((category) => (
             <div
               key={category.id}
-              className="rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-300"
+              className="flex items-center justify-between py-3.5 first:pt-0 last:pb-0"
             >
-              {category.name}
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm sm:text-base">{category.name}</h3>
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onDeleteCategory(category.id)}
+                className="rounded-xl px-3 h-8 text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50"
+              >
+                Excluir
+              </Button>
             </div>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

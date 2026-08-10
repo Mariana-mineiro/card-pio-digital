@@ -2,16 +2,20 @@
 
 import { useHome } from "@/app/hooks/use-home";
 import { useState } from "react";
-// Importe ou defina o tipo MenuItem conforme o seu projeto
-type MenuItem = {
-  id: string;
-  name: string;
-  description?: string;
-  price: number;
-  image_url?: string | null;
-  category_id?: string;
-  is_available: boolean;
-};
+import type { Tables } from "@/types/supabase";
+import { Button } from "@/components/ui/button";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import { useIsMobile } from "@/hooks/use-mobile";
+
+type MenuItem = Tables<"menu_items">;
 
 export default function HomePage() {
   const {
@@ -22,88 +26,93 @@ export default function HomePage() {
     isLoading,
     error,
     setActiveCategory,
+    reload,
   } = useHome();
 
-  // Estado para controlar o modal de detalhes do prato
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const isMobile = useIsMobile();
 
   return (
     <main className="min-h-screen bg-stone-50 px-4 py-6 text-slate-900 sm:px-6 lg:px-8 pb-16">
       <div className="mx-auto flex max-w-4xl flex-col gap-6">
         {/* Cabeçalho do Estabelecimento */}
-        <header className="overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm">
-          {/* Capa do Restaurante (caso exista) */}
-          {settings?.cover_url && (
-            <div className="h-32 w-full bg-stone-100 sm:h-44">
-              <img
-                src={settings.cover_url}
-                alt="Capa do Restaurante"
-                className="h-full w-full object-cover"
-              />
+        <header className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.24em] text-emerald-600">
+                Cardápio Digital
+              </p>
+              <h1 className="mt-1 text-2xl font-extrabold text-slate-900 sm:text-3xl">
+                Rancho Mineiro
+              </h1>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                Confira nossos pratos do dia preparados com muito carinho e ingredientes frescos.
+              </p>
             </div>
-          )}
 
-          <div className="p-5 sm:p-7">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-center gap-4">
-                {/* Logo do Restaurante (caso exista) */}
-                {settings?.logo_url && (
-                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl border border-stone-200 bg-stone-100 shadow-sm sm:h-16 sm:w-16">
-                    <img
-                      src={settings.logo_url}
-                      alt={settings?.name || "Rancho Mineiro"}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                )}
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.24em] text-emerald-600">
-                    Cardápio Digital
-                  </p>
-                  <h1 className="mt-1 text-2xl font-extrabold text-slate-900 sm:text-3xl">
-                    {settings?.name || "Rancho Mineiro"}
-                  </h1>
-                </div>
-              </div>
-
-              {/* Status Aberto / Fechado */}
-              <div
-                className={`rounded-full px-3.5 py-1 text-xs font-bold shrink-0 ${
+            {/* Status Aberto / Fechado */}
+            <div className="self-start sm:self-auto">
+              <span
+                className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold shadow-sm ${
                   settings?.is_open
-                    ? "bg-emerald-100 text-emerald-800"
-                    : "bg-amber-100 text-amber-800"
+                    ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                    : "bg-amber-100 text-amber-800 border border-amber-200"
                 }`}
               >
+                <span
+                  className={`h-2 w-2 rounded-full ${
+                    settings?.is_open ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+                  }`}
+                />
                 {settings?.is_open ? "Aberto agora" : "Fechado agora"}
-              </div>
+              </span>
             </div>
-
-            <p className="mt-3 text-sm leading-relaxed text-slate-600">
-              {settings?.description || "Uma experiência limpa, responsiva e pensada para mostrar os pratos do dia sem distrações."}
-            </p>
           </div>
         </header>
 
-        {/* Estado de Carregamento */}
+        {/* Estado de Carregamento (Skeleton Bonito) */}
         {isLoading ? (
-          <section className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm space-y-4">
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              <div className="h-9 w-20 animate-pulse rounded-full bg-stone-200 shrink-0" />
-              <div className="h-9 w-24 animate-pulse rounded-full bg-stone-200 shrink-0" />
+          <div className="space-y-6 animate-pulse">
+            {/* Skeleton da Nav de Categorias */}
+            <div className="flex gap-2 overflow-x-auto rounded-2xl bg-white p-2 shadow-sm border border-stone-200">
+              <div className="h-9 w-20 rounded-full bg-stone-200 shrink-0" />
+              <div className="h-9 w-24 rounded-full bg-stone-200 shrink-0" />
+              <div className="h-9 w-28 rounded-full bg-stone-200 shrink-0" />
+              <div className="h-9 w-22 rounded-full bg-stone-200 shrink-0" />
             </div>
-            <div className="space-y-3 pt-2">
-              {Array.from({ length: 3 }).map((_, index) => (
+
+            {/* Skeleton da Listagem de Pratos */}
+            <div className="space-y-3">
+              {Array.from({ length: 4 }).map((_, index) => (
                 <div
                   key={index}
-                  className="h-24 animate-pulse rounded-2xl bg-stone-100 w-full"
-                />
+                  className="flex items-center gap-4 rounded-3xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5"
+                >
+                  <div className="h-20 w-20 shrink-0 rounded-2xl bg-stone-200" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-5 w-2/5 rounded-md bg-stone-200" />
+                    <div className="h-4 w-4/5 rounded-md bg-stone-100" />
+                  </div>
+                  <div className="h-5 w-16 rounded-md bg-stone-200 shrink-0" />
+                </div>
               ))}
             </div>
-          </section>
+          </div>
         ) : error ? (
-          <section className="rounded-3xl border border-rose-200 bg-rose-50 p-5 text-center text-sm font-medium text-rose-700 shadow-sm">
-            <p className="font-semibold mb-1">Ops! Ocorreu um problema ao carregar o cardápio.</p>
-            <p className="text-xs opacity-90">{error}</p>
+          <section className="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-center shadow-sm space-y-4">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-rose-600 text-xl font-bold">
+              ⚠️
+            </div>
+            <div>
+              <p className="font-bold text-rose-900 text-base">Ops! Ocorreu um problema ao carregar o cardápio.</p>
+              <p className="text-xs text-rose-700 mt-1 opacity-90">{error}</p>
+            </div>
+            <button
+              onClick={() => void reload()}
+              className="inline-flex items-center justify-center rounded-2xl bg-rose-600 px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-sm hover:bg-rose-700 transition"
+            >
+              Tentar novamente
+            </button>
           </section>
         ) : (
           <>
@@ -160,14 +169,14 @@ export default function HomePage() {
                       )}
                     </div>
 
-                    {/* Informações do Prato com mais descrição visível */}
+                    {/* Informações do Prato */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <h2 className="text-base font-bold text-slate-900 truncate">
                             {item.name}
                           </h2>
-                          <p className="mt-1 text-xs leading-relaxed text-slate-600 line-clamp-3">
+                          <p className="mt-1 text-xs leading-relaxed text-slate-600 line-clamp-2">
                             {item.description || "Sem descrição informada."}
                           </p>
                         </div>
@@ -184,72 +193,63 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* Modal de Detalhes do Prato */}
-      {selectedItem && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs p-0 sm:p-4">
-          <div className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
-            {/* Imagem Grande no Modal (se houver) */}
-            {selectedItem.image_url ? (
-              <div className="h-56 w-full bg-stone-100 relative">
-                <img
-                  src={selectedItem.image_url}
-                  alt={selectedItem.name}
-                  className="h-full w-full object-cover"
-                />
-                <button
-                  onClick={() => setSelectedItem(null)}
-                  className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 h-9 w-9 flex items-center justify-center backdrop-blur-sm transition"
-                >
-                  ✕
-                </button>
-              </div>
-            ) : (
-              <div className="p-4 flex justify-end">
-                <button
-                  onClick={() => setSelectedItem(null)}
-                  className="bg-stone-100 hover:bg-stone-200 text-slate-700 rounded-full h-9 w-9 flex items-center justify-center transition"
-                >
-                  ✕
-                </button>
-              </div>
-            )}
+      {/* Drawer de Detalhes do Prato */}
+      <Drawer
+        open={!!selectedItem}
+        onOpenChange={(open) => !open && setSelectedItem(null)}
+        showSwipeHandle={isMobile}
+        swipeDirection={isMobile ? "down" : "right"}
+      >
+        <DrawerContent>
+          {selectedItem && (
+            <>
+              {selectedItem.image_url && (
+                <div className="h-48 w-full bg-stone-100 relative shrink-0">
+                  <img
+                    src={selectedItem.image_url}
+                    alt={selectedItem.name}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              )}
 
-            {/* Conteúdo Detalhado */}
-            <div className="p-6 overflow-y-auto space-y-4">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-emerald-600">
-                  Detalhes do Prato
-                </span>
-                <h2 className="text-2xl font-black text-slate-900 mt-1">
-                  {selectedItem.name}
-                </h2>
-                <span className="inline-block mt-2 text-lg font-extrabold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-xl">
-                  R$ {Number(selectedItem.price).toFixed(2).replace('.', ',')}
-                </span>
+              <DrawerHeader>
+                <div className="space-y-1">
+                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-600">
+                    Detalhes do Prato
+                  </span>
+                  <DrawerTitle className="text-2xl font-black text-slate-900">
+                    {selectedItem.name}
+                  </DrawerTitle>
+                  <div className="pt-1">
+                    <span className="inline-block text-lg font-extrabold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-xl">
+                      R$ {Number(selectedItem.price).toFixed(2).replace('.', ',')}
+                    </span>
+                  </div>
+                </div>
+                <DrawerDescription className="sr-only">
+                  Detalhes e descrição do prato selecionado
+                </DrawerDescription>
+              </DrawerHeader>
+
+              <div className="flex-1 scroll-fade overflow-y-auto px-6 py-2 space-y-4">
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                    Descrição Completa
+                  </h3>
+                  <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-wrap">
+                    {selectedItem.description || "Nenhuma descrição detalhada informada para este prato."}
+                  </p>
+                </div>
               </div>
 
-              <div className="border-t border-stone-100 pt-4">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                  Descrição Completa
-                </h3>
-                <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-wrap">
-                  {selectedItem.description || "Nenhuma descrição detalhada informada para este prato."}
-                </p>
-              </div>
-            </div>
-
-            {/* Rodapé do Modal */}
-            <div className="p-4 bg-stone-50 border-t border-stone-100 flex items-center justify-end">
-              <button
-                onClick={() => setSelectedItem(null)}
-                className="w-full sm:w-auto bg-slate-900 text-white font-bold text-xs uppercase tracking-wider px-6 py-3 rounded-2xl shadow-sm hover:bg-slate-800 transition"
-              >
-                Fechar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              <DrawerFooter>
+                <DrawerClose render={<Button variant="outline" className="w-full">Fechar</Button>} />
+              </DrawerFooter>
+            </>
+          )}
+        </DrawerContent>
+      </Drawer>
     </main>
   );
 }

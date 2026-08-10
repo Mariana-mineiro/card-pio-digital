@@ -58,6 +58,40 @@ export async function createDashboardCategory(name: string) {
   return data as Category;
 }
 
+export async function updateDashboardCategory(id: string, name: string) {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("categories")
+    .update({ name })
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return data as Category;
+}
+
+export async function deleteDashboardCategory(id: string) {
+  const supabase = createClient();
+  const { error } = await supabase.from("categories").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function uploadProductImage(file: File): Promise<string> {
+  const supabase = createClient();
+  const fileExt = file.name.split(".").pop();
+  const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+  const filePath = `${fileName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("pratos_imagens")
+    .upload(filePath, file);
+
+  if (uploadError) throw new Error(`Erro ao enviar imagem: ${uploadError.message}`);
+
+  const { data } = supabase.storage.from("pratos_imagens").getPublicUrl(filePath);
+  return data.publicUrl;
+}
+
 export async function createDashboardMenuItem(
   payload: Omit<MenuItem, "id" | "created_at">,
 ) {

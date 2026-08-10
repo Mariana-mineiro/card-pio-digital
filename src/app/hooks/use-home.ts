@@ -6,7 +6,7 @@ import {
   getHomeSettings,
 } from "@/app/services/home-service";
 import type { Category, MenuItem, Settings } from "@/app/types/home-types";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 export function useHome() {
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -16,32 +16,36 @@ export function useHome() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const loadHomeData = async () => {
-      setIsLoading(true);
-      setError(null);
+  const loadHomeData = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
 
-      try {
-        const [settingsData, categoriesData, itemsData] = await Promise.all([
-          getHomeSettings(),
-          getHomeCategories(),
-          getHomeMenuItems(),
-        ]);
+    try {
+      const [settingsData, categoriesData, itemsData] = await Promise.all([
+        getHomeSettings(),
+        getHomeCategories(),
+        getHomeMenuItems(),
+      ]);
 
-        setSettings(settingsData);
-        setCategories(categoriesData);
-        setMenuItems(itemsData);
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Falha ao carregar o cardápio.",
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    void loadHomeData();
+      setSettings(settingsData);
+      setCategories(categoriesData);
+      setMenuItems(itemsData);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Falha ao carregar o cardápio.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void loadHomeData();
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [loadHomeData]);
 
   const filteredItems = useMemo(() => {
     if (activeCategory === "all") return menuItems;
@@ -57,5 +61,6 @@ export function useHome() {
     setActiveCategory,
     isLoading,
     error,
+    reload: loadHomeData,
   };
 }

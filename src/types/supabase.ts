@@ -97,46 +97,23 @@ export type Database = {
           position?: number
           price?: number
         }
-        Relationships: [
-          {
-            foreignKeyName: "menu_items_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       settings: {
         Row: {
-          cover_url: string | null
-          description: string
           id: string
           is_open: boolean
-          logo_url: string | null
-          name: string
           updated_at: string
-          whatsapp: string
         }
         Insert: {
-          cover_url?: string | null
-          description?: string
           id?: string
           is_open?: boolean
-          logo_url?: string | null
-          name?: string
           updated_at?: string
-          whatsapp?: string
         }
         Update: {
-          cover_url?: string | null
-          description?: string
           id?: string
           is_open?: boolean
-          logo_url?: string | null
-          name?: string
           updated_at?: string
-          whatsapp?: string
         }
         Relationships: []
       }
