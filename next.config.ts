@@ -4,14 +4,18 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'images.unsplash.com',
+        hostname: '**.supabase.co',
+        pathname: '/storage/v1/object/public/**',
       },
       {
         protocol: 'https',
-        hostname: '*.supabase.co', // Autoriza qualquer projeto do Supabase (para as fotos dos pratos)
+        hostname: 'images.unsplash.com',
+        pathname: '/**',
       },
     ],
+    formats: ['image/avif', 'image/webp'],
+    qualities: [75, 80], // <-- Adicione esta linha para liberar o q=80 do Unsplash
   },
 };
 
-module.exports = nextConfig;
+export default nextConfig;

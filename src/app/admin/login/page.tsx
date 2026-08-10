@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
+import { Loader2 } from "lucide-react";
 
 const loginSchema = yup.object({
   email: yup.string().email("Digite um e-mail válido").required("O e-mail é obrigatório"),
@@ -105,7 +106,14 @@ export default function AdminLoginPage() {
             disabled={isSubmitting}
             className="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground ring-offset-background transition-colors hover:bg-primary/95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
           >
-            {isSubmitting ? "Entrando..." : "Entrar no painel"}
+            {isSubmitting ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Entrando...
+              </span>
+            ) : (
+              "Entrar no painel"
+            )}
           </button>
         </form>
 

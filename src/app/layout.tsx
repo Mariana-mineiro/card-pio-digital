@@ -2,7 +2,7 @@ import "@/styles/globals.css";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Cardápio Digital",
+  title: "Rancho mineiro",
   description:
     "Uma aplicação moderna de cardápio digital com painel administrativo modular.",
 };

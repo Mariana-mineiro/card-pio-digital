@@ -1,9 +1,8 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { CategoriesTab } from "@/app/admin/dashboard/components/categories-tab";
 import { ProductsTab } from "@/app/admin/dashboard/components/products-tab";
-import { ProductModal } from "@/app/admin/dashboard/components/product-modal";
-import { CategoryModal } from "@/app/admin/dashboard/components/category-modal";
 import { ConfirmModal } from "@/app/admin/dashboard/components/confirm-modal";
 import { useDashboard } from "@/app/admin/dashboard/hooks/use-dashboard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,6 +10,17 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+
+// Carregamento dinâmico dos modais para otimizar a thread principal e reduzir o JS inicial
+const ProductModal = dynamic(
+  () => import("@/app/admin/dashboard/components/product-modal").then((mod) => mod.ProductModal),
+  { ssr: false }
+);
+
+const CategoryModal = dynamic(
+  () => import("@/app/admin/dashboard/components/category-modal").then((mod) => mod.CategoryModal),
+  { ssr: false }
+);
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -35,7 +45,7 @@ export default function AdminDashboardPage() {
         <header className="rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 shadow-xs">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.24em] text-emerald-600">
+              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.24em] text-emerald-700">
                 Painel administrativo
               </p>
               <h1 className="mt-1 text-2xl sm:text-3xl font-black text-slate-900">
@@ -48,7 +58,7 @@ export default function AdminDashboardPage() {
                 onClick={() => void dashboard.toggleRestaurantStatus()}
                 className={`rounded-full px-4 h-9 text-xs font-bold transition ${
                   dashboard.settings?.is_open
-                    ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                    ? "bg-emerald-700 hover:bg-emerald-800 text-white"
                     : "bg-slate-200 text-slate-800 hover:bg-slate-300"
                 }`}
               >
@@ -56,20 +66,20 @@ export default function AdminDashboardPage() {
               </Button>
               <Button
                 onClick={dashboard.openCreateProductModal}
-                className="rounded-full bg-emerald-600 px-4 h-9 text-xs font-bold text-white hover:bg-emerald-700"
+                className="rounded-full bg-emerald-700 px-4 h-9 text-xs font-bold text-white hover:bg-emerald-800"
               >
                 + Novo Prato
               </Button>
               <Button
                 variant="outline"
                 onClick={() => dashboard.setIsCategoryModalOpen(true)}
-                className="rounded-full px-4 h-9 text-xs font-bold border-slate-200 hover:bg-slate-50"
+                className="rounded-full px-4 h-9 text-xs font-bold border-slate-200 hover:bg-slate-50 text-slate-800"
               >
                 + Categoria
               </Button>
               <Link
                 href="/"
-                className="inline-flex items-center justify-center rounded-full border border-slate-200 px-4 h-9 text-xs font-bold text-slate-700 hover:bg-slate-50"
+                className="inline-flex items-center justify-center rounded-full border border-slate-200 px-4 h-9 text-xs font-bold text-slate-800 hover:bg-slate-50"
               >
                 Ver cardápio
               </Link>
@@ -130,7 +140,7 @@ export default function AdminDashboardPage() {
           </Tabs>
         )}
 
-        {/* Modais */}
+        {/* Modais Carregados Dinamicamente */}
         <ProductModal
           isOpen={dashboard.isProductModalOpen}
           onClose={() => dashboard.setIsProductModalOpen(false)}

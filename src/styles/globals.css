@@ -5,6 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  --header-bg: oklch(0.92 0.02 85); /* Tom areia aconchegante */
   --background: oklch(1 0 0);
   --foreground: oklch(0.141 0.005 285.823);
   --card: oklch(1 0 0);
@@ -85,6 +86,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
+    --header-bg: oklch(0.92 0.02 85); /* Tom areia aconchegante */
     --background: #0a0a0a;
     --foreground: #ededed;
   }

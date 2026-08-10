@@ -15,7 +15,6 @@ export function useLogin({ onSuccess }: { onSuccess: () => void }) {
 
     try {
       await signInAdmin({ email, password });
-      setMessage("Login realizado com sucesso.");
       onSuccess();
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Falha ao autenticar.");

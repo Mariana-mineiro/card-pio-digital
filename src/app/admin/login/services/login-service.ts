@@ -9,7 +9,14 @@ export async function signInAdmin({ email, password }: LoginCredentials) {
   });
 
   if (error) {
-    throw new Error(error.message);
+    // Traduz e amigabiliza os erros comuns do Supabase Auth para português
+    if (error.message.includes("Invalid login credentials")) {
+      throw new Error("E-mail ou senha incorretos. Verifique seus dados.");
+    }
+    if (error.message.includes("Email not confirmed")) {
+      throw new Error("E-mail ainda não confirmado. Verifique sua caixa de entrada.");
+    }
+    throw new Error("Ocorreu um erro ao tentar entrar. Tente novamente.");
   }
 
   return data;

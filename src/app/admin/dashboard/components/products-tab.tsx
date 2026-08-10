@@ -30,7 +30,7 @@ export function ProductsTab({
       <div className="flex items-center justify-between pb-4 sm:pb-6 border-b border-slate-100">
         <div>
           <h2 className="text-lg sm:text-xl font-bold text-slate-900">Pratos Cadastrados</h2>
-          <p className="text-xs sm:text-sm text-slate-500">Gerencie os itens do seu cardápio digital.</p>
+          <p className="text-xs sm:text-sm text-slate-600">Gerencie os itens do seu cardápio digital.</p>
         </div>
       </div>
 
@@ -40,7 +40,7 @@ export function ProductsTab({
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 mt-4">
-          {menuItems.map((item) => (
+          {menuItems.map((item, index) => (
             <div
               key={item.id}
               className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 shadow-xs transition hover:shadow-sm"
@@ -52,23 +52,28 @@ export function ProductsTab({
                       src={item.image_url}
                       alt={item.name}
                       fill
+                      priority={index === 0}
+                      // Adicionado fetchPriority para forçar prioridade máxima no LCP detectado pelo Lighthouse
+                      {...(index === 0 ? { fetchPriority: "high" } : {})}
+                      quality={80}
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       className="object-cover"
                     />
                   </div>
                 ) : (
-                  <div className="mb-3 flex h-36 sm:h-40 w-full items-center justify-center rounded-xl bg-slate-100 text-xs text-slate-400">
+                  <div className="mb-3 flex h-36 sm:h-40 w-full items-center justify-center rounded-xl bg-slate-100 text-xs text-slate-500 font-medium">
                     Sem imagem
                   </div>
                 )}
 
                 <div className="flex items-start justify-between gap-2">
                   <h3 className="font-bold text-slate-900 text-sm sm:text-base">{item.name}</h3>
-                  <span className="font-bold text-emerald-600 text-sm">
+                  <span className="font-bold text-emerald-700 text-sm">
                     R$ {Number(item.price).toFixed(2).replace('.', ',')}
                   </span>
                 </div>
 
-                <p className="mt-0.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                <p className="mt-0.5 text-xs font-semibold text-slate-600 uppercase tracking-wider">
                   {getCategoryName(item.category_id)}
                 </p>
 
@@ -84,8 +89,8 @@ export function ProductsTab({
                   onClick={() => onToggleAvailability(item.id)}
                   className={`rounded-xl px-3 h-8 text-xs font-semibold ${
                     item.is_available
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                      : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
+                      ? "bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100"
+                      : "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200"
                   }`}
                 >
                   {item.is_available ? "Disponível" : "Oculto"}
@@ -96,7 +101,7 @@ export function ProductsTab({
                     variant="outline"
                     size="sm"
                     onClick={() => onEdit(item)}
-                    className="rounded-xl px-3 h-8 text-xs font-semibold border-slate-200 hover:bg-slate-50"
+                    className="rounded-xl px-3 h-8 text-xs font-semibold border-slate-200 text-slate-800 hover:bg-slate-50"
                   >
                     Editar
                   </Button>
@@ -104,7 +109,7 @@ export function ProductsTab({
                     variant="outline"
                     size="sm"
                     onClick={() => onDelete(item.id)}
-                    className="rounded-xl px-3 h-8 text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50"
+                    className="rounded-xl px-3 h-8 text-xs font-semibold text-rose-700 border-rose-200 hover:bg-rose-50"
                   >
                     Excluir
                   </Button>

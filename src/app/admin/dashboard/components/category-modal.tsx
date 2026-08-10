@@ -48,8 +48,8 @@ export function CategoryModal({ isOpen, onClose, onSubmit, isSubmitting, error }
           </div>
 
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-            <Button type="button" variant="outline" onClick={onClose} className="rounded-xl h-10 px-4 text-xs font-semibold">Cancelar</Button>
-            <Button type="submit" disabled={isSubmitting} className="rounded-xl h-10 px-5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white">
+            <Button type="button" variant="outline" onClick={onClose} className="rounded-xl h-10 px-4 text-xs font-semibold text-slate-700">Cancelar</Button>
+            <Button type="submit" disabled={isSubmitting} className="rounded-xl h-10 px-5 text-xs font-semibold bg-emerald-700 hover:bg-emerald-800 text-white">
               {isSubmitting ? "Salvando..." : "Salvar Categoria"}
             </Button>
           </div>
