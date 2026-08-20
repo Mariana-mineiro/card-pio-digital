@@ -11,7 +11,7 @@ export function middleware(request: NextRequest) {
 
     // Se não tiver token, redireciona para a página de login
     if (!authToken) {
-      const loginUrl = new URL("/login", request.url);
+      const loginUrl = new URL("/admin/login", request.url);
       // Opcional: Salva para onde ele queria ir para redirecionar depois do login
       loginUrl.searchParams.set("callbackUrl", pathname);
       return NextResponse.redirect(loginUrl);
