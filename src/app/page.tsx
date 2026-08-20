@@ -15,7 +15,6 @@ import { useState } from "react";
 
 import { useHome } from "@/app/hooks/use-home";
 import { Button } from "@/components/ui/button";
-import { useIsMobile } from "@/hooks/use-mobile";
 import type { Tables } from "@/types/supabase";
 
 type MenuItem = Tables<"menu_items">;
@@ -33,7 +32,6 @@ export default function HomePage() {
   } = useHome();
 
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
-  const isMobile = useIsMobile();
 
   return (
     <main className="min-h-screen bg-[oklch(0.985_0.002_85)] text-slate-900 pb-16">
