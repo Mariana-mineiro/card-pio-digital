@@ -27,7 +27,7 @@ export default function Error({
             onClick={() => reset()}
             className="rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-6"
           >
-            Tentar novamente
+            Tentar novamente.
           </Button>
         </div>
       </div>
