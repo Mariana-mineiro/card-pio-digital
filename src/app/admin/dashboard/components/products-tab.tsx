@@ -39,7 +39,7 @@ export function ProductsTab({
           Nenhum prato cadastrado ainda. Clique em &quot;+ Novo Prato&quot; acima.
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 mt-4">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 mt-4">
           {menuItems.map((item, index) => (
             <div
               key={item.id}
